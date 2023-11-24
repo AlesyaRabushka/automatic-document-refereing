@@ -19,7 +19,7 @@ export const FormComponent = () => {
     // spinner and processing
     const [pressed, setPressed] = useState(false);
     // show START button and helper text
-    const [showText, setShowText] = useState(true);
+    const [showText, setShowText] = useState(false);
     // show pspinner
     const [spinner, setSpinner] = useState(false);
     // shown load text
@@ -50,22 +50,29 @@ export const FormComponent = () => {
             setPressed(true);
             setShowText(false);
             setSpinner(true);
-            handleFileUpload(event);
+            // handleFileUpload(event);
             handleStart();
         }
     })
 
 
     const handleFileUpload = async (e: any) => {
-        const files = e.target.files;
-        setFiles(files);
+        setFiles(Array.from(e.target.files));
+        console.log(e.target.files[0])
+        setShowText(true);
+        await ClientService.upload(e.target.files[0])
     }
 
     useEffect(() => {
-        setKeyWords(result[0]);
-        setSentences(result[1]);
-        console.log(keyWords)
-    }, [result])
+        let i = 0;
+        const timeoutId = setTimeout(() => {
+            setCurrentText(text[i]);
+            console.log('here')
+            i += 1;
+          }, 1500); // время в миллисекундах
+      
+          return () => clearTimeout(timeoutId); 
+    }, [])
 
     // start processing
     const handleStart = async () => {
@@ -74,7 +81,8 @@ export const FormComponent = () => {
         setSpinner(true);
 
         // const r = await ClientService.get();
-        const r2 = await ClientService.process();
+        const r2 = await ClientService.process(files[0]);
+        console.log(r2)
         setResult(() => r2);
         setSpinner(false);
         setIfResults(true);
@@ -110,10 +118,11 @@ export const FormComponent = () => {
                                 const arr: Array<File> = []
                                 for (let i = 0; i < files.length; i++){
                                     console.log(files[i].type)
-                                    if (files[i].type == 'text/html'){
+                                    if (files[i].type == 'text/plain'){
                                         arr.push(files[i]);
                                     }
                                 }
+                                setShowText(true);
                                 setFiles(arr);
                                 setDrag(false);
                             }}
@@ -135,10 +144,10 @@ export const FormComponent = () => {
                                 setDrag(true);
                             }}
                             >
-                            Перенесите html-файлы сюда или нажмите на кнопку
+                            Перенесите txt-файлы сюда или нажмите на кнопку
                             <div className="input-box">
                                 <label htmlFor="input-file" className="input-file-button">Выбрать файлы</label>
-                                <input type="file" name="file" id="input-file" className="input" onChange={handleFileUpload} accept="text/html" multiple/>
+                                <input type="file" name="file" id="input-file" className="input" onChange={handleFileUpload} accept="text/plain" multiple/>
                                 {
                                     files && 
                                     <div className="files-box">
@@ -153,7 +162,7 @@ export const FormComponent = () => {
                     }
                  </>
                 }
-                
+
             {showText && 
                 <div className="helper-labels">
                     <label className="label-button" onClick={handleStart}>START</label>
@@ -163,25 +172,40 @@ export const FormComponent = () => {
 
             { ifResults ?
                 <>
+                    <button className="input-file-button" onClick={e => window.location.reload()}>Загрузить новый файл</button>
                     {showFileText ? 
                         <label className="show-text-button" onClick={e => setShowFileText(!showFileText)}>Hide files content</label> 
                         : 
                         <label className="show-text-button" onClick={e => setShowFileText(!showFileText)}>Show files content</label>
                     }
                     <div className="results-box">
-                        {result.map((item:any) => 
+                        {/* {result.map((item:any) =>  */}
+                        
                             <div className="result-item">
-                                <label style={{fontSize: "1.5em"}}>{item.method}</label>
-                                <label style={{fontSize: "1.2em", marginTop: '5px'}}>{item.name}</label>
-                                <label style={{marginTop: '5px', marginBottom: "5px"}}>{item.result}</label>
+                                <label style={{fontSize: "1.5em"}}>{files[0].name}</label>
+                                <label style={{marginTop: "5px"}} >Ключевые предложения:</label>
+                                <label style={{marginTop: '5px', fontWeight: 300}}>
+                                    {result[0].map((item:any) => <div style={{marginTop: "5px"}}>{item}</div>)}
+                                    </label>
+                                <label style={{marginTop: "5px"}}>Ключевые слова и фразы</label>
+                                
+                                <label style={{marginTop: '5px', marginBottom: "5px", fontWeight: 300}}>
+                                    {result[1].map((item:any) => <div>{item}</div>)}
+                                </label>
+                                <label style={{marginTop: "5px"}}>ML метод</label>
+                                <label style={{marginTop: '5px', marginBottom: "5px", fontWeight: 300}}>
+                                    {result[4].map((item:any) => <div>{item}</div>)}
+                                </label>
+
+                                <label style={{marginTop: "5px"}}>Текст файла:</label>
                                 {
-                                    showFileText && <label style={{marginTop: '10px'}}>{item.text}</label>
+                                    showFileText && <label style={{marginTop: '10px', marginBottom: '10px'}}>{result[6]}</label>
                                 }
                             </div>
                             
-                        )}
+                        {/* )} */}
                         {result &&
-                            <PDFDownloadLink className="input-file-button" document={<PDF props={{keyWords:String(keyWords), sentences:String(sentences)}} />} fileName="text-recognition-result" style={{textDecoration:"none", color:"white"}}>
+                            <PDFDownloadLink className="input-file-button" document={<PDF props={{keyWords:String(result[3]), sentences:String(result[2]), summary:String(result[5])}} />} fileName="text-recognition-result" style={{textDecoration:"none", color:"white"}}>
                                 Сохранить результат
                             </PDFDownloadLink>
                         }

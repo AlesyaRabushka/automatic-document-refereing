@@ -33,6 +33,7 @@ const styles = StyleSheet.create({
 interface propsPDF{
   keyWords: string,
   sentences: string,
+  summary: string,
 }
 
 const PDF = ({props}:{props:propsPDF}) => {
@@ -40,7 +41,7 @@ const PDF = ({props}:{props:propsPDF}) => {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.title}>
-          <Text>Ключевые слова:</Text>
+          <Text>Ключевые слова и фразы:</Text>
         </View>
         <View style={styles.section}>
           <Text>{props.keyWords}</Text>
@@ -50,6 +51,12 @@ const PDF = ({props}:{props:propsPDF}) => {
         </View>
         <View style={styles.section}>
           <Text>{props.sentences}</Text>
+        </View>
+        <View style={styles.title}>
+            <Text>ML метод:</Text>
+        </View>
+        <View style={styles.section}>
+          <Text>{props.summary}</Text>
         </View>
       </Page>
     </Document>
